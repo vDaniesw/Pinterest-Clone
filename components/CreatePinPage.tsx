@@ -52,7 +52,7 @@ const CreatePinPage: React.FC<CreatePinPageProps> = ({ session }) => {
         
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = fileName;
+        const filePath = `${session.user.id}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
             .from('pins-images')
