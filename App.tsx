@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import { Pin } from './types';
-
-const initialPins: Pin[] = [];
+import { supabase } from './lib/supabaseClient';
+import type { Session } from '@supabase/supabase-js';
+import Auth from './components/Auth';
 
 const SearchBar: React.FC = () => {
   return (
@@ -61,28 +62,125 @@ const PinGrid: React.FC<PinGridProps> = ({ pins }) => {
 };
 
 const App: React.FC = () => {
-  const [pins, setPins] = useState<Pin[]>(initialPins);
+  const [session, setSession] = useState<Session | null>(null);
+  const [pins, setPins] = useState<Pin[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const getSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setLoading(false);
+    };
+
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const fetchPins = async () => {
+      if (session?.user) {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('pins')
+          .select('id, title, image_url, user_id')
+          .eq('user_id', session.user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error fetching pins:', error);
+        } else if (data) {
+          const formattedPins: Pin[] = data.map(pin => ({
+              id: pin.id,
+              title: pin.title || '',
+              imageUrl: pin.image_url,
+              user_id: pin.user_id,
+          }));
+          setPins(formattedPins);
+        }
+        setLoading(false);
+      }
+    };
+
+    fetchPins();
+  }, [session]);
+
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!session?.user) {
+        alert('Debes iniciar sesión para subir una imagen.');
+        return;
+    }
+    
     if (event.target.files && event.target.files[0]) {
       const file = event.target.files[0];
-      const newPin: Pin = {
-        id: new Date().toISOString(),
-        imageUrl: URL.createObjectURL(file),
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${session.user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('pins-images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Error uploading image:', uploadError);
+        alert('Error al subir la imagen.');
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('pins-images')
+        .getPublicUrl(filePath);
+
+      const newPinData = {
+        user_id: session.user.id,
         title: file.name,
+        image_url: publicUrl,
       };
-      setPins(prevPins => [newPin, ...prevPins]);
-      // Reset file input value to allow uploading the same file again
+
+      const { data: insertedPin, error: insertError } = await supabase
+        .from('pins')
+        .insert(newPinData)
+        .select()
+        .single();
+      
+      if (insertError) {
+          console.error('Error saving pin:', insertError);
+          alert('Error al guardar el pin.');
+          // Consider deleting the uploaded image if the DB insert fails
+      } else if (insertedPin) {
+           const formattedNewPin: Pin = {
+              id: insertedPin.id,
+              title: insertedPin.title || '',
+              imageUrl: insertedPin.image_url,
+              user_id: insertedPin.user_id,
+           };
+          setPins(prevPins => [formattedNewPin, ...prevPins]);
+      }
+      
       event.target.value = '';
     }
   };
+
+  if (loading && !session) {
+      return <div>Cargando...</div>
+  }
+
+  if (!session) {
+    return <Auth />;
+  }
 
   return (
     <div className="min-h-screen bg-white">
       <Sidebar onImageUpload={handleImageUpload} />
       <main className="ml-20 p-4 md:p-8">
         <SearchBar />
-        <PinGrid pins={pins} />
+        {loading ? <div>Cargando pins...</div> : <PinGrid pins={pins} />}
       </main>
     </div>
   );

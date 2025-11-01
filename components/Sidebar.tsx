@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 const HomeIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
@@ -51,6 +52,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onImageUpload }) => {
     fileInputRef.current?.click();
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
   const navItems = [
     { name: 'Inicio', icon: <HomeIcon />, action: () => {} },
     { name: 'Categorias', icon: <CategoryIcon />, action: () => {} },
@@ -82,7 +87,10 @@ const Sidebar: React.FC<SidebarProps> = ({ onImageUpload }) => {
           ))}
         </nav>
         <div className="p-4">
-            <button aria-label="Configuracion" className="w-full flex items-center justify-center p-3 rounded-2xl text-gray-500 hover:bg-gray-100 hover:text-black transition-colors duration-200">
+            <button 
+              aria-label="Configuracion" 
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center p-3 rounded-2xl text-gray-500 hover:bg-gray-100 hover:text-black transition-colors duration-200">
                 <SettingsIcon />
             </button>
         </div>
@@ -93,6 +101,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onImageUpload }) => {
         onChange={onImageUpload}
         className="hidden"
         accept="image/*"
+        multiple={false}
       />
     </>
   );
