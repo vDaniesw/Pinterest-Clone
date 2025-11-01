@@ -29,7 +29,6 @@ const CreatePinPage: React.FC<CreatePinPageProps> = ({ session }) => {
             reader.onloadend = () => {
                 setImagePreview(reader.result as string);
             };
-            // FIX: Corrected typo in FileReader method name.
             reader.readAsDataURL(file);
         }
     };
@@ -53,7 +52,7 @@ const CreatePinPage: React.FC<CreatePinPageProps> = ({ session }) => {
         
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `${session.user.id}/${fileName}`;
+        const filePath = fileName; // Simplified file path to upload to bucket root
 
         const { error: uploadError } = await supabase.storage
             .from('pins-images')
