@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Pin, Comment } from '../types';
 import PinGrid from './PinGrid';
 import { supabase } from '../lib/supabaseClient';
@@ -12,7 +12,7 @@ const ArrowLeftIcon = () => (
 );
 
 const HeartIcon = ({ filled }: { filled: boolean }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 transition-colors ${filled ? 'text-red-500' : 'text-gray-700'}`} fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 transition-colors ${filled ? 'text-red-500' : 'text-gray-700'}`} fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={filled? 1 : 2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
     </svg>
 );
@@ -44,10 +44,15 @@ const SearchLoopIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
 );
 
+const ChevronDownIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+    </svg>
+);
+
 interface Author {
     username: string;
     avatar_url: string;
-    followers: number;
 }
 interface PinDetailProps {
     pinId: string;
@@ -95,14 +100,12 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins }) => {
             const { data: { user } } = await supabase.auth.getUser();
             setCurrentUser(user);
 
-            // Fetch likes count
             const { count: likeCount } = await supabase
                 .from('pin_likes')
                 .select('*', { count: 'exact', head: true })
                 .eq('pin_id', pinId);
             setLikes(likeCount ?? 0);
 
-            // Check if current user has liked this pin
             if (user) {
                 const { data: likeData } = await supabase
                     .from('pin_likes')
@@ -113,7 +116,6 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins }) => {
                 setIsLiked(!!likeData);
             }
             
-            // Fetch author
             const { data: authorData } = await supabase
                 .from('profiles')
                 .select('username, avatar_url')
@@ -123,10 +125,8 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins }) => {
             setAuthor({
                 username: authorData?.username || 'Usuario Anónimo',
                 avatar_url: authorData?.avatar_url || `https://i.pravatar.cc/40?u=${pinData.user_id}`,
-                followers: Math.floor(Math.random() * 5000) // Placeholder
             });
 
-            // Fetch comments
              const { data: commentsData } = await supabase
                 .from('comments')
                 .select(`id, text, profiles(username, avatar_url)`)
@@ -194,86 +194,96 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins }) => {
             >
                 <ArrowLeftIcon />
             </button>
-            <div className="bg-white shadow-xl rounded-3xl mx-auto my-8 max-w-7xl flex flex-col md:flex-row">
-                {/* Left Column: Image */}
-                <div className="w-full md:w-1/2 flex-shrink-0">
-                    <div className="relative group">
-                        <img src={pin.imageUrl} alt={pin.title} className="w-full h-auto object-contain rounded-t-3xl md:rounded-l-3xl md:rounded-r-none" />
-                        <div className="absolute bottom-4 right-4 flex space-x-2">
-                             <button className="bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors"><ExpandIcon/></button>
-                            <button className="bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors"><SearchLoopIcon/></button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Column: Details */}
-                <div className="w-full md:w-1/2 p-6 sm:p-8 flex flex-col">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-2 text-gray-700">
-                             <button onClick={handleLike} className="p-2 rounded-full hover:bg-gray-100 transition-colors flex items-center space-x-1">
-                                <HeartIcon filled={isLiked} /> <span className="font-bold text-lg">{likes}</span>
-                            </button>
-                            <button className="p-2 rounded-full hover:bg-gray-100"><CommentIcon /></button>
-                            <button className="p-2 rounded-full hover:bg-gray-100"><ShareIcon /></button>
-                            <button className="p-2 rounded-full hover:bg-gray-100"><MoreIcon /></button>
-                        </div>
-                        <button className="bg-red-600 text-white font-bold px-4 py-3 rounded-full hover:bg-red-700 transition-colors">
-                            Guardar
-                        </button>
-                    </div>
-                    
-                    <div className="overflow-y-auto flex-grow">
-                        <h1 className="text-3xl font-bold mb-2">{pin.title}</h1>
-                        {pin.description && <p className="text-gray-600 mb-6">{pin.description}</p>}
-
-                        {author && (
-                            <div className="flex items-center mb-6">
-                            <img src={author.avatar_url} alt={author.username} className="w-12 h-12 rounded-full mr-4" />
-                            <div>
-                                <p className="font-semibold text-lg">{author.username}</p>
-                                <p className="text-sm text-gray-500">{author.followers} seguidores</p>
+            <div className="my-8 mx-auto max-w-[90rem] flex space-x-8">
+                {/* Left Column: Pin Details */}
+                <div className="w-full md:w-1/2 flex justify-end">
+                    <div className="bg-white shadow-xl rounded-3xl max-w-xl w-full">
+                        <div className="p-4 sm:p-6 sticky top-4 bg-white rounded-t-3xl z-10">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-2 text-gray-700">
+                                    <button onClick={handleLike} className="p-2 rounded-full hover:bg-gray-100 transition-colors flex items-center space-x-1">
+                                        <HeartIcon filled={isLiked} /> <span className="font-bold text-lg">{likes}</span>
+                                    </button>
+                                    <button className="p-2 rounded-full hover:bg-gray-100"><CommentIcon /></button>
+                                    <button className="p-2 rounded-full hover:bg-gray-100"><ShareIcon /></button>
+                                    <button className="p-2 rounded-full hover:bg-gray-100"><MoreIcon /></button>
+                                </div>
+                                <button className="bg-red-600 text-white font-bold px-4 py-3 rounded-full hover:bg-red-700 transition-colors">
+                                    Guardar
+                                </button>
                             </div>
-                            <button className="ml-auto bg-gray-200 font-semibold px-4 py-2 rounded-full hover:bg-gray-300">
-                                Seguir
-                            </button>
-                            </div>
-                        )}
-                        
-                        <div className="border-t pt-4 mt-4">
-                        <h2 className="font-semibold text-lg mb-4">Comentarios</h2>
-                        <div className="space-y-4 mb-4 max-h-60 overflow-y-auto pr-2">
-                        {comments.map(comment => (
-                            <div key={comment.id} className="flex items-start">
-                                <img src={comment.user.avatar_url} alt={comment.user.username} className="w-8 h-8 rounded-full mr-3 mt-1" />
-                                <div className="flex-1 bg-gray-50 p-2 rounded-lg">
-                                    <p><span className="font-semibold">{comment.user.username}</span> {comment.text}</p>
+                        </div>
+
+                        <div className="px-4 sm:px-6 pb-6">
+                            <div className="relative group mb-4">
+                                <img src={pin.imageUrl} alt={pin.title} className="w-full h-auto object-contain rounded-3xl" />
+                                <div className="absolute bottom-4 right-4 flex space-x-2">
+                                    <button className="bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors"><ExpandIcon/></button>
+                                    <button className="bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors"><SearchLoopIcon/></button>
                                 </div>
                             </div>
-                        ))}
-                        {comments.length === 0 && <p className="text-sm text-gray-500">Todavía no hay comentarios. ¡Añade uno!</p>}
-                        </div>
-                        {currentUser && (
-                            <form onSubmit={handleCommentSubmit} className="flex items-center mt-4">
-                                <img src={currentUser.user_metadata.avatar_url || `https://i.pravatar.cc/32?u=${currentUser.id}`} alt="Tu avatar" className="w-10 h-10 rounded-full mr-3" />
-                                <input 
-                                    type="text" 
-                                    placeholder="Agregar un comentario" 
-                                    value={newComment}
-                                    onChange={(e) => setNewComment(e.target.value)}
-                                    className="w-full bg-gray-100 rounded-full border-none py-3 px-4 focus:ring-2 focus:ring-red-500" />
-                            </form>
-                        )}
+                            
+                            <h1 className="text-2xl font-bold mb-4">{pin.title}</h1>
+                            
+                            {author && (
+                                <div className="flex items-center mb-6">
+                                    <img src={author.avatar_url} alt={author.username} className="w-12 h-12 rounded-full mr-4" />
+                                    <div>
+                                        <p className="font-semibold text-base">{author.username}</p>
+                                    </div>
+                                </div>
+                            )}
+                            
+                            {/* Comments Section */}
+                            <div className="pt-4">
+                                <div className="flex justify-between items-center mb-4">
+                                    <h2 className="font-semibold text-lg">{comments.length} comentarios</h2>
+                                    <button><ChevronDownIcon /></button>
+                                </div>
+                                
+                                <div className="space-y-4 mb-4">
+                                {comments.slice(0,1).map(comment => (
+                                    <div key={comment.id} className="flex items-start">
+                                        <img src={comment.user.avatar_url} alt={comment.user.username} className="w-8 h-8 rounded-full mr-3" />
+                                        <div>
+                                            <p><span className="font-semibold">{comment.user.username}</span> {comment.text}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                                </div>
+
+                                {currentUser && (
+                                    <form onSubmit={handleCommentSubmit} className="flex items-center mt-4">
+                                        <img src={currentUser.user_metadata.avatar_url || `https://i.pravatar.cc/32?u=${currentUser.id}`} alt="Tu avatar" className="w-10 h-10 rounded-full mr-3" />
+                                        <div className="relative w-full">
+                                          <input 
+                                              type="text" 
+                                              placeholder="Agregar un comentario" 
+                                              value={newComment}
+                                              onChange={(e) => setNewComment(e.target.value)}
+                                              className="w-full bg-gray-100 rounded-full border-none py-3 pl-4 pr-24 focus:ring-2 focus:ring-red-500" />
+                                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex space-x-2 text-gray-500">
+                                            <span>🙂</span>
+                                            <span>GIF</span>
+                                          </div>
+                                        </div>
+                                    </form>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-            {relatedPins.length > 0 && (
-                <div className="w-full mt-12">
-                    <h2 className="text-2xl font-bold text-center mb-6">Más para explorar</h2>
-                    <PinGrid pins={relatedPins} />
+
+                {/* Right Column: Related Pins */}
+                <div className="w-full md:w-1/2">
+                    {relatedPins.length > 0 && (
+                        <div>
+                            <h2 className="text-2xl font-bold text-left mb-6">Más para explorar</h2>
+                            <PinGrid pins={relatedPins} />
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 };
