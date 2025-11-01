@@ -6,3 +6,12 @@ export interface Pin {
   description?: string;
   hashtags?: string;
 }
+
+export interface Comment {
+  id: number;
+  text: string;
+  user: {
+    username: string;
+    avatar_url: string;
+  };
+}
