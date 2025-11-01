@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Pin, Comment } from '../types';
 import PinGrid from './PinGrid';
 import { supabase } from '../lib/supabaseClient';
+import type { User } from '@supabase/supabase-js';
 
 // Icons
 const ArrowLeftIcon = () => (
@@ -11,7 +12,7 @@ const ArrowLeftIcon = () => (
 );
 
 const HeartIcon = ({ filled }: { filled: boolean }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg xmlns="http://www.w3.org/2000/svg" className={`h-6 w-6 transition-colors ${filled ? 'text-red-500' : 'text-gray-700'}`} fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 20.364l-7.682-7.682a4.5 4.5 0 010-6.364z" />
     </svg>
 );
@@ -61,14 +62,35 @@ const PinDetail: React.FC<PinDetailProps> = ({ pin, relatedPins, onClose, onPinC
     const [comments, setComments] = useState<Comment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [showSharePopover, setShowSharePopover] = useState(false);
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
     const shareButtonRef = useRef<HTMLDivElement>(null);
 
      useEffect(() => {
         const fetchPinData = async () => {
-            setLikes(Math.floor(Math.random() * 1000));
-            setIsLiked(false);
+            const { data: { user } } = await supabase.auth.getUser();
+            setCurrentUser(user);
+
+            // Fetch likes count
+            const { count: likeCount, error: countError } = await supabase
+                .from('pin_likes')
+                .select('*', { count: 'exact', head: true })
+                .eq('pin_id', pin.id);
+            if (!countError) setLikes(likeCount ?? 0);
+
+            // Check if current user has liked this pin
+            if (user) {
+                const { data: likeData, error: userLikeError } = await supabase
+                    .from('pin_likes')
+                    .select('id')
+                    .eq('pin_id', pin.id)
+                    .eq('user_id', user.id)
+                    .single();
+                setIsLiked(!!likeData);
+            } else {
+                setIsLiked(false);
+            }
             
-            // Fetch author - assumes a 'profiles' table with 'username' and 'avatar_url'
+            // Fetch author
             const { data: authorData } = await supabase
                 .from('profiles')
                 .select('username, avatar_url')
@@ -78,10 +100,10 @@ const PinDetail: React.FC<PinDetailProps> = ({ pin, relatedPins, onClose, onPinC
             setAuthor({
                 username: authorData?.username || 'Usuario Anónimo',
                 avatar_url: authorData?.avatar_url || `https://i.pravatar.cc/40?u=${pin.user_id}`,
-                followers: Math.floor(Math.random() * 5000)
+                followers: Math.floor(Math.random() * 5000) // Placeholder
             });
 
-            // Fetch comments - assumes a 'comments' table
+            // Fetch comments
              const { data: commentsData } = await supabase
                 .from('comments')
                 .select(`id, text, profiles(username, avatar_url)`)
@@ -116,9 +138,59 @@ const PinDetail: React.FC<PinDetailProps> = ({ pin, relatedPins, onClose, onPinC
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showSharePopover]);
 
-    const handleLike = () => {
-        setIsLiked(!isLiked);
-        setLikes(prev => isLiked ? prev - 1 : prev + 1);
+    const handleLike = async () => {
+        if (!currentUser) {
+            alert('Debes iniciar sesión para dar me gusta.');
+            return;
+        }
+
+        if (isLiked) {
+            const { error } = await supabase
+                .from('pin_likes')
+                .delete()
+                .match({ pin_id: pin.id, user_id: currentUser.id });
+            
+            if (!error) {
+                setIsLiked(false);
+                setLikes(prev => prev - 1);
+            }
+        } else {
+            const { error } = await supabase
+                .from('pin_likes')
+                .insert({ pin_id: pin.id, user_id: currentUser.id });
+            
+            if (!error) {
+                setIsLiked(true);
+                setLikes(prev => prev + 1);
+            }
+        }
+    };
+
+    const handleCommentSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newComment.trim() || !currentUser) return;
+        
+        const { data, error } = await supabase
+            .from('comments')
+            .insert({ text: newComment, pin_id: pin.id, user_id: currentUser.id })
+            .select('id, text, profiles(username, avatar_url)')
+            .single();
+
+        if (error) {
+            console.error('Error posting comment:', error);
+            alert('No se pudo publicar el comentario.');
+        } else if (data) {
+            const formattedComment = {
+                id: data.id,
+                text: data.text,
+                user: {
+                    username: data.profiles?.username || 'Anónimo',
+                    avatar_url: data.profiles?.avatar_url || `https://i.pravatar.cc/32`
+                }
+            };
+            setComments(prev => [...prev, formattedComment]);
+            setNewComment('');
+        }
     };
     
     const handleCopyLink = () => {
@@ -139,27 +211,29 @@ const PinDetail: React.FC<PinDetailProps> = ({ pin, relatedPins, onClose, onPinC
                     <ArrowLeftIcon />
                 </button>
 
-                <div className="bg-white shadow-xl rounded-3xl mx-auto my-8 p-4 w-full grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Left Side: Image */}
+                <div className="bg-white shadow-xl rounded-3xl mx-auto my-8 max-w-4xl flex flex-col">
+                    {/* Image Section */}
                     <div className="relative group">
-                        <img src={pin.imageUrl} alt={pin.title} className="w-full h-auto object-cover rounded-3xl" />
-                        <div className="absolute bottom-4 right-4 flex space-x-2">
+                        <img src={pin.imageUrl} alt={pin.title} className="w-full h-auto object-contain rounded-t-3xl" />
+                         <div className="absolute bottom-4 right-4 flex space-x-2">
                             <button className="bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors">
                                 <ZoomIcon/>
                             </button>
                         </div>
                     </div>
 
-                    {/* Right Side: Details and Comments */}
-                    <div className="flex flex-col">
+                    {/* Details Section */}
+                    <div className="p-6 sm:p-8 flex-grow">
                         <div className="flex items-center justify-between mb-4">
-                            <div ref={shareButtonRef} className="relative flex items-center space-x-2">
-                                <button onClick={handleLike} className="p-2 rounded-full hover:bg-gray-100 text-gray-700 hover:text-red-500 transition-colors"><HeartIcon filled={isLiked} /></button>
-                                <span className="font-semibold text-gray-700">{likes}</span>
+                            <div ref={shareButtonRef} className="relative flex items-center space-x-2 text-gray-700">
+                                <button onClick={handleLike} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                                    <HeartIcon filled={isLiked} />
+                                </button>
+                                <span className="font-bold text-lg">{likes}</span>
                                 <button onClick={() => setShowSharePopover(p => !p)} className="p-2 rounded-full hover:bg-gray-100"><ShareIcon /></button>
                                 <button className="p-2 rounded-full hover:bg-gray-100"><MoreIcon /></button>
                                 {showSharePopover && (
-                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-lg p-4 w-72 z-20 border">
+                                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-white rounded-2xl shadow-lg p-4 w-72 z-20 border">
                                         <p className="font-semibold text-center mb-3">Compartir</p>
                                         <div className="flex justify-around mb-4">
                                             <button onClick={handleCopyLink} className="flex flex-col items-center text-xs space-y-1"><span className="p-3 bg-gray-200 rounded-full"><LinkIcon /></span><span>Copiar enlace</span></button>
@@ -181,42 +255,50 @@ const PinDetail: React.FC<PinDetailProps> = ({ pin, relatedPins, onClose, onPinC
                                 Guardar
                             </button>
                         </div>
+                        
+                        <h1 className="text-3xl font-bold mb-2">{pin.title}</h1>
+                        {pin.description && <p className="text-gray-600 mb-6">{pin.description}</p>}
 
-                        <div className="flex-grow overflow-y-auto pr-2">
-                             <h1 className="text-3xl font-bold mb-2">{pin.title}</h1>
-                             <p className="text-gray-600 mb-6">{pin.description}</p>
-
-                             {author && (
-                                 <div className="flex items-center mb-6">
-                                    <img src={author.avatar_url} alt={author.username} className="w-10 h-10 rounded-full mr-3" />
-                                    <div>
-                                        <p className="font-semibold">{author.username}</p>
-                                        <p className="text-sm text-gray-500">{author.followers} seguidores</p>
-                                    </div>
-                                    <button className="ml-auto bg-gray-200 font-semibold px-4 py-2 rounded-full hover:bg-gray-300">
-                                        Seguir
-                                    </button>
-                                 </div>
-                             )}
-                             
-                             <div className="border-t pt-4">
-                                <h2 className="font-semibold text-lg mb-4">Comentarios</h2>
-                                <div className="space-y-4 mb-4">
-                                {comments.map(comment => (
-                                    <div key={comment.id} className="flex items-start">
-                                        <img src={comment.user.avatar_url} alt={comment.user.username} className="w-8 h-8 rounded-full mr-3 mt-1" />
-                                        <div className="flex-1">
-                                            <p><span className="font-semibold">{comment.user.username}</span> {comment.text}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                                {comments.length === 0 && <p className="text-sm text-gray-500">Todavía no hay comentarios. ¡Añade uno!</p>}
+                        {author && (
+                            <div className="flex items-center mb-6">
+                            <img src={author.avatar_url} alt={author.username} className="w-10 h-10 rounded-full mr-3" />
+                            <div>
+                                <p className="font-semibold">{author.username}</p>
+                                <p className="text-sm text-gray-500">{author.followers} seguidores</p>
+                            </div>
+                            <button className="ml-auto bg-gray-200 font-semibold px-4 py-2 rounded-full hover:bg-gray-300">
+                                Seguir
+                            </button>
+                            </div>
+                        )}
+                        
+                        <div className="border-t pt-4 mt-4">
+                        <h2 className="font-semibold text-lg mb-4">Comentarios</h2>
+                        <div className="space-y-4 mb-4 max-h-60 overflow-y-auto">
+                        {comments.map(comment => (
+                            <div key={comment.id} className="flex items-start">
+                                <img src={comment.user.avatar_url} alt={comment.user.username} className="w-8 h-8 rounded-full mr-3 mt-1" />
+                                <div className="flex-1">
+                                    <p><span className="font-semibold">{comment.user.username}</span> {comment.text}</p>
                                 </div>
-                                <div className="flex items-center">
-                                    <img src={`https://i.pravatar.cc/32?u=current_user`} alt="Tu" className="w-8 h-8 rounded-full mr-3" />
-                                    <input type="text" placeholder="Agregar un comentario" className="w-full bg-gray-100 rounded-full border-none py-2 px-4 focus:ring-2 focus:ring-red-500" />
-                                </div>
-                             </div>
+                            </div>
+                        ))}
+                        {comments.length === 0 && <p className="text-sm text-gray-500">Todavía no hay comentarios. ¡Añade uno!</p>}
+                        </div>
+                        {currentUser && (
+                            <form onSubmit={handleCommentSubmit} className="flex items-center mt-4">
+                                <img src={currentUser.user_metadata.avatar_url || `https://i.pravatar.cc/32?u=${currentUser.id}`} alt="Tu avatar" className="w-8 h-8 rounded-full mr-3" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Agregar un comentario" 
+                                    value={newComment}
+                                    onChange={(e) => setNewComment(e.target.value)}
+                                    className="w-full bg-gray-100 rounded-full border-none py-2 px-4 focus:ring-2 focus:ring-red-500" />
+                                <button type="submit" disabled={!newComment.trim()} className="ml-2 text-sm bg-red-600 text-white font-semibold py-2 px-4 rounded-full disabled:bg-gray-300 transition-colors">
+                                    Publicar
+                                </button>
+                            </form>
+                        )}
                         </div>
                     </div>
                 </div>
