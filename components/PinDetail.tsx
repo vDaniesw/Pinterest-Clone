@@ -164,7 +164,7 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
                                 </div>
                                 
                                 <div className="space-y-4 mb-4">
-                                {comments.slice(0,1).map(comment => (
+                                {comments.map(comment => (
                                     <div key={comment.id} className="flex items-start">
                                         <img src={comment.user.avatar_url} alt={comment.user.username} className="w-8 h-8 rounded-full mr-3" />
                                         <div>

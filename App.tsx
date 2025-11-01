@@ -203,11 +203,10 @@ const App: React.FC = () => {
     );
   };
   
-  const isDetailPage = /^\/pin\/\d+/.test(path);
   const isCreatePage = path === '/crear';
 
   return (
-    <div className={`min-h-screen ${isCreatePage || isDetailPage ? 'bg-gray-100' : 'bg-white'}`}>
+    <div className={`min-h-screen ${isCreatePage ? 'bg-gray-100' : 'bg-white'}`}>
       <Sidebar />
       <main className={`ml-20 ${isCreatePage ? '' : 'p-4 md:p-8'}`}>
         {renderContent()}
