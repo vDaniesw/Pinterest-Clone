@@ -50,27 +50,26 @@ const ChevronDownIcon = () => (
 );
 
 const EmojiIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4.082 4.082 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg aria-hidden="true" aria-label="" className="h-6 w-6 text-gray-700" role="img" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M7 8.5a1.5 1.5 0 1 1 3 0 1.5 1.5 0 0 1-3 0m10 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m.64 4.27A8.8 8.8 0 0 1 12 15c-2 0-3.91-.8-5.64-2.23l1.28-1.54A6.8 6.8 0 0 0 12 13q2.18.02 4.36-1.77zM24 12a12 12 0 1 1-24 0 12 12 0 0 1 24 0M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20"></path>
     </svg>
 );
 
 const StickerIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 10-4.773-4.773 3.375 3.375 0 004.774 4.774zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519A5.25 5.25 0 005.25 12.439" />
+    <svg aria-hidden="true" aria-label="" className="h-6 w-6 text-gray-700" role="img" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M5 1a4 4 0 0 0-4 4v14a4 4 0 0 0 4 4h5v-2H5a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1h-4a4 4 0 0 0-3.7 2.5 4.5 4.5 0 0 1-3.48-1.91l-1.64 1.15A6.5 6.5 0 0 0 12 16.48V23h.76a4 4 0 0 0 2.83-1.17l6.24-6.24A4 4 0 0 0 23 12.76V5a4 4 0 0 0-4-4zm15.41 13.17-6.24 6.24-.17.16V16c0-1.1.9-2 2-2h4.57zM7.5 11a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3m9-3a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3"></path>
     </svg>
 );
 
 const ImageIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm16.5-1.5H3.75" />
+    <svg aria-hidden="true" aria-label="" className="h-6 w-6 text-gray-700" role="img" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M18 8a2 2 0 1 0-4 0 2 2 0 0 0 4 0M5 1a4 4 0 0 0-4 4v14a4 4 0 0 0 4 4h14a4 4 0 0 0 4-4V5a4 4 0 0 0-4-4zm16 4v9h-4.17a5.8 5.8 0 0 1-4.12-1.7l-.24-.24A7.04 7.04 0 0 0 3 11.63V5c0-1.1.9-2 2-2h14a2 2 0 0 1 2 2M3 19v-4.59l.94-.94a5.04 5.04 0 0 1 7.12 0l.23.24A7.8 7.8 0 0 0 16.83 16H21v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2"></path>
     </svg>
 );
 
 const SendIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
-        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+    <svg aria-hidden="true" aria-label="" className="h-5 w-5 text-white" role="img" viewBox="0 0 24 24" fill="currentColor">
+       <path d="M4.07 1.37a2.1 2.1 0 0 0-2.8 2.59L3.94 12l-2.69 8.04a2.1 2.1 0 0 0 2.81 2.6l18.1-7.7A3 3 0 0 0 24 12.18v-.36a3 3 0 0 0-1.83-2.76z"></path>
     </svg>
 );
 
@@ -201,16 +200,16 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
                                                 placeholder="Agregar un comentario" 
                                                 value={newComment}
                                                 onChange={(e) => setNewComment(e.target.value)}
-                                                className="w-full bg-gray-100 rounded-full border-transparent focus:ring-2 focus:ring-gray-400 focus:border-transparent py-2.5 px-4 pr-40 transition"
+                                                className="w-full bg-gray-100 rounded-full border-transparent focus:ring-2 focus:ring-gray-400 focus:border-transparent py-3 px-4 pr-48 transition"
                                             />
-                                            <div className="absolute inset-y-0 right-0 pr-2 flex items-center space-x-0.5">
+                                            <div className="absolute inset-y-0 right-0 pr-2 flex items-center space-x-1">
                                                 <button type="button" className="p-2 hover:bg-gray-200 rounded-full"><EmojiIcon /></button>
                                                 <button type="button" className="p-2 hover:bg-gray-200 rounded-full"><StickerIcon /></button>
                                                 <button type="button" className="p-2 hover:bg-gray-200 rounded-full"><ImageIcon /></button>
                                                 {newComment.trim().length > 0 && (
                                                     <button
                                                         type="submit"
-                                                        className="bg-red-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-700 transition-colors"
+                                                        className="bg-red-600 w-9 h-9 flex items-center justify-center rounded-full hover:bg-red-700 transition-colors"
                                                         aria-label="Enviar comentario"
                                                     >
                                                         <SendIcon />
