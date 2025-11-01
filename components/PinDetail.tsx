@@ -49,6 +49,9 @@ const ChevronDownIcon = () => (
     </svg>
 );
 
+const EmojiPickerIcon = () => <span className="text-xl">🙂</span>;
+const GifIcon = () => <span className="text-sm font-semibold text-gray-600">GIF</span>;
+
 interface Author {
     username: string;
     avatar_url: string;
@@ -74,18 +77,10 @@ interface PinDetailProps {
 
 const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, activePinData, detailLoading, currentUser, onLike, onCommentSubmit }) => {
     const [newComment, setNewComment] = useState('');
-    const [comments, setComments] = useState<Comment[]>([]);
 
     useEffect(() => {
         getPinDetails(pinId, currentUser);
     }, [pinId, currentUser, getPinDetails]);
-
-    useEffect(() => {
-        if (activePinData) {
-            setComments(activePinData.comments);
-        }
-    }, [activePinData]);
-
 
     const handleBack = () => {
         window.location.assign('/');
@@ -93,9 +88,9 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
 
     const handleCommentSubmitForm = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!newComment.trim()) return;
         const submittedComment = await onCommentSubmit(pinId, newComment);
         if (submittedComment) {
-            setComments(prev => [...prev, submittedComment]);
             setNewComment('');
         }
     };
@@ -105,7 +100,7 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
     if (detailLoading) return <div className="text-center w-full py-20">Cargando pin...</div>;
     if (!activePinData) return <div className="text-center w-full py-20">Pin no encontrado.</div>;
     
-    const { pin, author, likes, isLiked } = activePinData;
+    const { pin, author, likes, isLiked, comments } = activePinData;
 
     return (
         <div className="w-full">
@@ -159,7 +154,7 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
                             {/* Comments Section */}
                             <div className="pt-4">
                                 <div className="flex justify-between items-center mb-4">
-                                    <h2 className="font-semibold text-lg">{comments.length} comentarios</h2>
+                                    <h2 className="font-semibold text-lg">{comments.length === 0 ? '0 comentarios' : `${comments.length} comentarios`}</h2>
                                     <button><ChevronDownIcon /></button>
                                 </div>
                                 
@@ -175,19 +170,20 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
                                 </div>
 
                                 {currentUser && (
-                                    <form onSubmit={handleCommentSubmitForm} className="flex items-center mt-4">
-                                        <img src={currentUser.user_metadata.avatar_url || `https://i.pravatar.cc/32?u=${currentUser.id}`} alt="Tu avatar" className="w-10 h-10 rounded-full mr-3" />
+                                    <form onSubmit={handleCommentSubmitForm} className="flex items-center mt-4 space-x-3">
+                                        <img src={currentUser.user_metadata.avatar_url || `https://i.pravatar.cc/32?u=${currentUser.id}`} alt="Tu avatar" className="w-10 h-10 rounded-full flex-shrink-0" />
                                         <div className="relative w-full">
-                                          <input 
-                                              type="text" 
-                                              placeholder="Agregar un comentario" 
-                                              value={newComment}
-                                              onChange={(e) => setNewComment(e.target.value)}
-                                              className="w-full bg-gray-100 rounded-full border-none py-3 pl-4 pr-24 focus:ring-2 focus:ring-red-500" />
-                                          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex space-x-2 text-gray-500">
-                                            <span>🙂</span>
-                                            <span>GIF</span>
-                                          </div>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Agregar un comentario" 
+                                                value={newComment}
+                                                onChange={(e) => setNewComment(e.target.value)}
+                                                className="w-full bg-gray-100 rounded-2xl border-transparent focus:ring-2 focus:ring-gray-400 focus:border-transparent py-2.5 px-4 pr-20"
+                                            />
+                                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center space-x-2">
+                                                <button type="button" className="text-xl p-1 hover:bg-gray-200 rounded-full"><EmojiPickerIcon /></button>
+                                                <button type="button" className="p-1 hover:bg-gray-200 rounded-full"><GifIcon /></button>
+                                            </div>
                                         </div>
                                     </form>
                                 )}
