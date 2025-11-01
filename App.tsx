@@ -4,7 +4,7 @@ import { Pin } from './types';
 import { supabase } from './lib/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import Auth from './components/Auth';
-import CreatePinModal, { PinData as CreatePinDataType } from './components/CreatePinModal';
+import CreatePinPage from './components/CreatePinPage';
 
 const SearchBar: React.FC = () => {
   return (
@@ -68,7 +68,8 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+  const path = window.location.pathname;
+
 
   useEffect(() => {
     const getSession = async () => {
@@ -113,67 +114,13 @@ const App: React.FC = () => {
       }
     };
 
-    if (session) {
+    if (session && path === '/') {
       fetchPins();
+    } else if (path !== '/') {
+        setLoading(false);
     }
-  }, [session]);
+  }, [session, path]);
 
-
-  const handleCreatePin = async (pinData: CreatePinDataType) => {
-    if (!session?.user) {
-        alert('Debes iniciar sesión para crear un pin.');
-        return;
-    }
-    
-    const file = pinData.image;
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}.${fileExt}`;
-    const filePath = `${session.user.id}/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('pins-images')
-      .upload(filePath, file);
-
-    if (uploadError) {
-      console.error('Error uploading image:', uploadError);
-      alert('Error al subir la imagen.');
-      return;
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('pins-images')
-      .getPublicUrl(filePath);
-
-    const newPinData = {
-      user_id: session.user.id,
-      title: pinData.title,
-      description: pinData.description,
-      hashtags: pinData.hashtags,
-      image_url: publicUrl,
-    };
-
-    const { data: insertedPin, error: insertError } = await supabase
-      .from('pins')
-      .insert(newPinData)
-      .select()
-      .single();
-    
-    if (insertError) {
-        console.error('Error saving pin:', insertError);
-        alert('Error al guardar el pin.');
-        // Consider deleting the uploaded image if the DB insert fails
-    } else if (insertedPin) {
-         const formattedNewPin: Pin = {
-            id: insertedPin.id,
-            title: insertedPin.title || '',
-            imageUrl: insertedPin.image_url,
-            user_id: insertedPin.user_id,
-            description: insertedPin.description,
-            hashtags: insertedPin.hashtags,
-         };
-        setPins(prevPins => [formattedNewPin, ...prevPins]);
-    }
-  };
 
   if (loading && !session) {
       return <div>Cargando...</div>
@@ -185,18 +132,17 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Sidebar onShowCreateModal={() => setCreateModalOpen(true)} />
+      <Sidebar />
       <main className="ml-20 p-4 md:p-8">
-        <SearchBar />
-        {loading ? <div>Cargando pins...</div> : <PinGrid pins={pins} />}
+        {path === '/crear' ? (
+            <CreatePinPage session={session} />
+        ) : (
+            <>
+                <SearchBar />
+                {loading ? <div>Cargando pins...</div> : <PinGrid pins={pins} />}
+            </>
+        )}
       </main>
-       {isCreateModalOpen && (
-        <CreatePinModal
-            isOpen={isCreateModalOpen}
-            onClose={() => setCreateModalOpen(false)}
-            onSubmit={handleCreatePin}
-        />
-      )}
     </div>
   );
 };

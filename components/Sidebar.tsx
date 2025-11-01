@@ -41,26 +41,19 @@ const SettingsIcon = () => (
 );
 
 
-interface SidebarProps {
-  onShowCreateModal: () => void;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ onShowCreateModal }) => {
-
-  const handleCreateClick = () => {
-    onShowCreateModal();
-  };
+const Sidebar: React.FC = () => {
+  const path = window.location.pathname;
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
   const navItems = [
-    { name: 'Inicio', icon: <HomeIcon />, action: () => {} },
-    { name: 'Categorias', icon: <CategoryIcon />, action: () => {} },
-    { name: 'Crear o subir', icon: <AddIcon />, action: handleCreateClick },
-    { name: 'Notificaciones', icon: <BellIcon />, action: () => {} },
-    { name: 'Mensajes', icon: <MessageIcon />, action: () => {} },
+    { name: 'Inicio', icon: <HomeIcon />, action: () => window.location.assign('/'), path: '/' },
+    { name: 'Categorias', icon: <CategoryIcon />, action: () => {}, path: '/categorias' },
+    { name: 'Crear o subir', icon: <AddIcon />, action: () => window.location.assign('/crear'), path: '/crear' },
+    { name: 'Notificaciones', icon: <BellIcon />, action: () => {}, path: '/notificaciones' },
+    { name: 'Mensajes', icon: <MessageIcon />, action: () => {}, path: '/mensajes' },
   ];
 
   return (
@@ -71,13 +64,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onShowCreateModal }) => {
           </svg>
       </div>
       <nav className="flex-1 px-4 py-4 space-y-2">
-        {navItems.map((item, index) => (
+        {navItems.map((item) => (
           <button
             key={item.name}
             onClick={item.action}
             aria-label={item.name}
             className={`w-full flex items-center justify-center p-3 rounded-2xl transition-colors duration-200 ${
-              index === 0 ? 'text-black bg-gray-200' : 'text-gray-500 hover:bg-gray-100 hover:text-black'
+              path === item.path ? 'text-black bg-gray-200' : 'text-gray-500 hover:bg-gray-100 hover:text-black'
             }`}
           >
             {item.icon}
