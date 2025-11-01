@@ -17,7 +17,7 @@ const SearchBar: React.FC = () => {
       <input
         type="text"
         placeholder="Buscar..."
-        className="w-full bg-gray-100 border border-transparent rounded-full py-3 pl-12 pr-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+        className="w-full bg-gray-200 border border-transparent rounded-full py-3 pl-12 pr-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
       />
     </div>
   );
@@ -30,11 +30,9 @@ interface PinItemProps {
 const PinItem: React.FC<PinItemProps> = ({ pin }) => {
   return (
     <div className="mb-4 break-inside-avoid group relative">
-      <img src={pin.imageUrl} alt={pin.title} className="w-full rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300" />
-       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 rounded-lg flex flex-col items-center justify-center p-4">
-        <p className="text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">{pin.title}</p>
-        {pin.description && <p className="text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-2 text-center">{pin.description}</p>}
-        {pin.hashtags && <p className="text-gray-300 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-2 text-center">{pin.hashtags}</p>}
+      <img src={pin.imageUrl} alt={pin.title} className="w-full rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300" />
+       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 rounded-2xl flex flex-col items-start justify-end p-4">
+        <p className="text-white text-md font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">{pin.title}</p>
       </div>
     </div>
   );
@@ -50,7 +48,7 @@ const PinGrid: React.FC<PinGridProps> = ({ pins }) => {
     return (
         <div className="text-center py-20">
             <h2 className="text-2xl font-semibold text-gray-700">No hay pins para mostrar</h2>
-            <p className="text-gray-500 mt-2">Usa el botón 'Crear o subir' para empezar.</p>
+            <p className="text-gray-500 mt-2">Usa el botón 'Crear' para empezar.</p>
         </div>
     );
   }
@@ -122,24 +120,26 @@ const App: React.FC = () => {
   }, [session, path]);
 
 
-  if (loading && !session) {
-      return <div>Cargando...</div>
+  if (loading && !session && path !== '/crear') {
+      return <div className="flex items-center justify-center h-screen">Cargando...</div>
   }
 
   if (!session) {
     return <Auth />;
   }
+  
+  const isCreatePage = path === '/crear';
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className={`min-h-screen ${isCreatePage ? 'bg-gray-100' : 'bg-white'}`}>
       <Sidebar />
-      <main className="ml-20 p-4 md:p-8">
-        {path === '/crear' ? (
+      <main className={`ml-20 ${isCreatePage ? '' : 'p-4 md:p-8'}`}>
+        {isCreatePage ? (
             <CreatePinPage session={session} />
         ) : (
             <>
                 <SearchBar />
-                {loading ? <div>Cargando pins...</div> : <PinGrid pins={pins} />}
+                {loading ? <div className="text-center">Cargando pins...</div> : <PinGrid pins={pins} />}
             </>
         )}
       </main>
