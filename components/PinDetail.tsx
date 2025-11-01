@@ -49,8 +49,31 @@ const ChevronDownIcon = () => (
     </svg>
 );
 
-const EmojiPickerIcon = () => <span className="text-xl">🙂</span>;
-const GifIcon = () => <span className="text-sm font-semibold text-gray-600">GIF</span>;
+const EmojiIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.828 14.828a4.082 4.082 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+);
+
+const StickerIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 10-4.773-4.773 3.375 3.375 0 004.774 4.774zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519A5.25 5.25 0 005.25 12.439" />
+    </svg>
+);
+
+const ImageIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm16.5-1.5H3.75" />
+    </svg>
+);
+
+const SendIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+    </svg>
+);
+
 
 interface Author {
     username: string;
@@ -178,11 +201,21 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
                                                 placeholder="Agregar un comentario" 
                                                 value={newComment}
                                                 onChange={(e) => setNewComment(e.target.value)}
-                                                className="w-full bg-gray-100 rounded-full border-transparent focus:ring-2 focus:ring-gray-400 focus:border-transparent py-2.5 px-4 pr-24 transition"
+                                                className="w-full bg-gray-100 rounded-full border-transparent focus:ring-2 focus:ring-gray-400 focus:border-transparent py-2.5 px-4 pr-40 transition"
                                             />
-                                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center space-x-1">
-                                                <button type="button" className="text-xl p-2 hover:bg-gray-200 rounded-full"><EmojiPickerIcon /></button>
-                                                <button type="button" className="p-2 hover:bg-gray-200 rounded-full"><GifIcon /></button>
+                                            <div className="absolute inset-y-0 right-0 pr-2 flex items-center space-x-0.5">
+                                                <button type="button" className="p-2 hover:bg-gray-200 rounded-full"><EmojiIcon /></button>
+                                                <button type="button" className="p-2 hover:bg-gray-200 rounded-full"><StickerIcon /></button>
+                                                <button type="button" className="p-2 hover:bg-gray-200 rounded-full"><ImageIcon /></button>
+                                                {newComment.trim().length > 0 && (
+                                                    <button
+                                                        type="submit"
+                                                        className="bg-red-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-700 transition-colors"
+                                                        aria-label="Enviar comentario"
+                                                    >
+                                                        <SendIcon />
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </form>
