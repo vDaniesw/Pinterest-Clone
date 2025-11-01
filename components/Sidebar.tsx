@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 
 const HomeIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12.0007 2.62842L3.00073 10.4037V21.0002H10.0007V15.0002H14.0007V21.0002H21.0007V10.4037L12.0007 2.62842Z"></path>
+        <path d="M12.5 2.25a.75.75 0 0 0-1 0L2.25 9.94a.75.75 0 0 0 .5 1.31h1.5v9a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75v-5.25h3v5.25a.75.75 0 0 0 .75.75h4.5a.75.75 0 0 0 .75-.75v-9h1.5a.75.75 0 0 0 .5-1.31L12.5 2.25Z"></path>
     </svg>
 );
 
