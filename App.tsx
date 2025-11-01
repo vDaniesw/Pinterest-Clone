@@ -50,7 +50,9 @@ const App: React.FC = () => {
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
   const [path, setPath] = useState(window.location.pathname);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(
+    () => localStorage.getItem('searchQuery') || ''
+  );
   
   // Cache for pin details
   const [pinCache, setPinCache] = useState<Map<string, PinDetailData>>(new Map());
@@ -151,6 +153,32 @@ const App: React.FC = () => {
       fetchPins();
     }
   }, [session]);
+
+  useEffect(() => {
+    localStorage.setItem('searchQuery', searchQuery);
+  }, [searchQuery]);
+
+  // Save and restore scroll position to make reloads seamless
+  useEffect(() => {
+    const handleScroll = () => {
+      if (path === '/') {
+        sessionStorage.setItem('scrollPosition', window.scrollY.toString());
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [path]);
+
+  useEffect(() => {
+    if (path === '/' && pins.length > 0) {
+      const scrollPosition = sessionStorage.getItem('scrollPosition');
+      if (scrollPosition) {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(scrollPosition, 10));
+        }, 100);
+      }
+    }
+  }, [pins, path]);
   
   const filteredPins = pins.filter(pin => {
       const query = searchQuery.toLowerCase();
