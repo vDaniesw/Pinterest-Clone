@@ -80,7 +80,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-white">
       <Sidebar onImageUpload={handleImageUpload} />
-      <main className="ml-20 lg:ml-64 p-4 md:p-8 transition-all duration-300">
+      <main className="ml-20 p-4 md:p-8">
         <SearchBar />
         <PinGrid pins={pins} />
       </main>
