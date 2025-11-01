@@ -38,19 +38,17 @@ const SettingsIcon = () => (
 );
 
 
-const Sidebar: React.FC = () => {
-  const path = window.location.pathname;
-
+const Sidebar: React.FC<{ path: string }> = ({ path }) => {
   const handleLogout = async () => {
     await supabase.auth.signOut();
   };
 
   const navItems = [
-    { name: 'Inicio', icon: <HomeIcon />, action: () => window.location.assign('/'), path: '/' },
-    { name: 'Categorias', icon: <CategoryIcon />, action: () => {}, path: '/categorias' },
-    { name: 'Crear o subir', icon: <AddIcon />, action: () => window.location.assign('/crear'), path: '/crear' },
-    { name: 'Notificaciones', icon: <BellIcon />, action: () => {}, path: '/notificaciones' },
-    { name: 'Mensajes', icon: <MessageIcon />, action: () => {}, path: '/mensajes' },
+    { name: 'Inicio', icon: <HomeIcon />, href: '/', path: '/' },
+    { name: 'Categorias', icon: <CategoryIcon />, href: '#', path: '/categorias' },
+    { name: 'Crear o subir', icon: <AddIcon />, href: '/crear', path: '/crear' },
+    { name: 'Notificaciones', icon: <BellIcon />, href: '#', path: '/notificaciones' },
+    { name: 'Mensajes', icon: <MessageIcon />, href: '#', path: '/mensajes' },
   ];
 
   return (
@@ -62,16 +60,17 @@ const Sidebar: React.FC = () => {
       </div>
       <nav className="flex-1 px-4 py-4 space-y-2">
         {navItems.map((item) => (
-          <button
+          <a
             key={item.name}
-            onClick={item.action}
+            href={item.href}
+            onClick={item.href === '#' ? (e) => e.preventDefault() : undefined}
             aria-label={item.name}
             className={`w-full flex items-center justify-center p-3 rounded-2xl transition-colors duration-200 ${
               path === item.path ? 'text-black bg-gray-200' : 'text-black hover:bg-gray-100'
             }`}
           >
             {item.icon}
-          </button>
+          </a>
         ))}
       </nav>
       <div className="p-4">

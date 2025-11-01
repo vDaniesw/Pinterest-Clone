@@ -12,31 +12,27 @@ interface PinItemProps {
 }
 
 const PinItem: React.FC<PinItemProps> = ({ pin }) => {
-  const handleNavigate = () => {
-    window.location.assign(`/pin/${pin.id}`);
-  };
-
   return (
-    <div className="mb-4 break-inside-avoid cursor-pointer" onClick={handleNavigate}>
+    <a href={`/pin/${pin.id}`} className="mb-4 break-inside-avoid block cursor-pointer">
         <div className="group relative">
             <img src={pin.imageUrl} alt={pin.title} className="w-full rounded-2xl shadow-md" />
             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-2xl p-3 flex flex-col justify-between opacity-0 group-hover:opacity-100">
                 <div className="flex justify-end">
-                    <button className="bg-red-600 text-white font-bold px-4 py-2 rounded-full hover:bg-red-700 transition-colors text-base" onClick={(e) => e.stopPropagation()}>
+                    <button className="bg-red-600 text-white font-bold px-4 py-2 rounded-full hover:bg-red-700 transition-colors text-base" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                         Guardar
                     </button>
                 </div>
                 <div className="flex justify-end">
                     <button 
                       aria-label="Compartir Pin"
-                      className="bg-white w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors shadow-md" onClick={(e) => e.stopPropagation()}>
+                      className="bg-white w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors shadow-md" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                         <ShareIcon />
                     </button>
                 </div>
             </div>
         </div>
       <p className="text-sm font-semibold mt-2 px-1 truncate">{pin.title}</p>
-    </div>
+    </a>
   );
 };
 

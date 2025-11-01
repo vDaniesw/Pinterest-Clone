@@ -50,6 +50,56 @@ const App: React.FC = () => {
   const [detailLoading, setDetailLoading] = useState(true);
 
   useEffect(() => {
+    // This effect handles all client-side routing logic
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const anchor = target.closest('a');
+
+      if (
+        !anchor ||
+        anchor.target === '_blank' ||
+        anchor.hasAttribute('download') ||
+        anchor.getAttribute('rel') === 'external' ||
+        e.metaKey || e.ctrlKey || e.shiftKey || e.altKey
+      ) {
+        return;
+      }
+      
+      const href = anchor.getAttribute('href');
+      if (href && (href.startsWith('/') || href.startsWith(window.location.origin))) {
+        e.preventDefault();
+        const url = new URL(href, window.location.origin);
+        if (url.pathname !== window.location.pathname) {
+            window.history.pushState({}, '', href);
+            setPath(url.pathname);
+        }
+      }
+    };
+
+    const handlePopState = () => {
+      setPath(window.location.pathname);
+    };
+
+    const handleNavigateEvent = (e: Event) => {
+      const { detail: newPath } = (e as CustomEvent<string>);
+      if (newPath) {
+        window.history.pushState({}, '', newPath);
+        setPath(newPath);
+      }
+    };
+
+    document.addEventListener('click', handleLinkClick);
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('navigate', handleNavigateEvent);
+
+    return () => {
+      document.removeEventListener('click', handleLinkClick);
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('navigate', handleNavigateEvent);
+    };
+  }, []);
+
+  useEffect(() => {
     const getSession = async () => {
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
@@ -207,7 +257,7 @@ const App: React.FC = () => {
 
   return (
     <div className={`min-h-screen ${isCreatePage ? 'bg-gray-100' : 'bg-white'}`}>
-      <Sidebar />
+      <Sidebar path={path} />
       <main className={`ml-20 ${isCreatePage ? '' : 'p-4 md:p-8'}`}>
         {renderContent()}
       </main>

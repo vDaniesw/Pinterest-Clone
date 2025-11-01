@@ -104,10 +104,6 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
         getPinDetails(pinId, currentUser);
     }, [pinId, currentUser, getPinDetails]);
 
-    const handleBack = () => {
-        window.location.assign('/');
-    }
-
     const handleCommentSubmitForm = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newComment.trim()) return;
@@ -126,13 +122,13 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
 
     return (
         <div className="w-full">
-            <button
-                onClick={handleBack}
+            <a
+                href="/"
                 className="fixed top-6 left-24 z-20 bg-white rounded-full p-2 shadow-md hover:bg-gray-200 transition-colors"
                 aria-label="Volver"
             >
                 <ArrowLeftIcon />
-            </button>
+            </a>
             <div className="my-8 mx-auto max-w-[90rem] flex space-x-8">
                 {/* Left Column: Pin Details */}
                 <div className="w-full md:w-1/2 flex justify-end">

@@ -12,6 +12,10 @@ interface CreatePinPageProps {
     session: Session | null;
 }
 
+const navigate = (path: string) => {
+    window.dispatchEvent(new CustomEvent('navigate', { detail: path }));
+};
+
 const CreatePinPage: React.FC<CreatePinPageProps> = ({ session }) => {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
@@ -86,7 +90,7 @@ const CreatePinPage: React.FC<CreatePinPageProps> = ({ session }) => {
             alert(`Error al guardar el pin: ${insertError.message}`);
         } else {
             alert('¡Pin creado con éxito!');
-            window.location.assign('/');
+            navigate('/');
         }
         setIsSubmitting(false);
     };
