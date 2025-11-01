@@ -8,7 +8,12 @@ import type { Session, User } from '@supabase/supabase-js';
 import Auth from './components/Auth';
 import CreatePinPage from './components/CreatePinPage';
 
-const SearchBar: React.FC = () => {
+interface SearchBarProps {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+}
+
+const SearchBar: React.FC<SearchBarProps> = ({ searchQuery, setSearchQuery }) => {
   return (
     <div className="relative w-full mb-8">
       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -20,6 +25,8 @@ const SearchBar: React.FC = () => {
         type="text"
         placeholder="Buscar..."
         className="w-full bg-gray-200 border border-transparent rounded-full py-3 pl-12 pr-4 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
       />
     </div>
   );
@@ -43,6 +50,7 @@ const App: React.FC = () => {
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
   const [path, setPath] = useState(window.location.pathname);
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Cache for pin details
   const [pinCache, setPinCache] = useState<Map<string, PinDetailData>>(new Map());
@@ -143,6 +151,15 @@ const App: React.FC = () => {
       fetchPins();
     }
   }, [session]);
+  
+  const filteredPins = pins.filter(pin => {
+      const query = searchQuery.toLowerCase();
+      return (
+          pin.title.toLowerCase().includes(query) ||
+          (pin.description && pin.description.toLowerCase().includes(query)) ||
+          (pin.hashtags && pin.hashtags.toLowerCase().includes(query))
+      );
+  });
 
   const getPinDetails = useCallback(async (pinId: string, user: User | null) => {
       if (pinCache.has(pinId)) {
@@ -247,8 +264,8 @@ const App: React.FC = () => {
     // Default to home page
     return (
       <>
-        <SearchBar />
-        <PinGrid pins={pins} />
+        <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <PinGrid pins={filteredPins} />
       </>
     );
   };
