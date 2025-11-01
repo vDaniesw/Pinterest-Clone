@@ -197,7 +197,7 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins }) => {
             <div className="my-8 mx-auto max-w-[90rem] flex space-x-8">
                 {/* Left Column: Pin Details */}
                 <div className="w-full md:w-1/2 flex justify-end">
-                    <div className="bg-white shadow-xl rounded-3xl max-w-xl w-full">
+                    <div className="bg-white shadow-xl rounded-3xl max-w-xl w-full border border-gray-200">
                         <div className="p-4 sm:p-6 sticky top-4 bg-white rounded-t-3xl z-10">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2 text-gray-700">
