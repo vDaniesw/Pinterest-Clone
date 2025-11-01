@@ -1,22 +1,8 @@
-
 import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
 import { Pin } from './types';
 
-const initialPins: Pin[] = [
-  { id: '1', imageUrl: 'https://picsum.photos/id/1015/400/600', title: 'Forest Road' },
-  { id: '2', imageUrl: 'https://picsum.photos/id/1016/400/450', title: 'Man on a boat' },
-  { id: '3', imageUrl: 'https://picsum.photos/id/1018/400/300', title: 'Mountain' },
-  { id: '4', imageUrl: 'https://picsum.photos/id/1025/400/500', title: 'Pug' },
-  { id: '5', imageUrl: 'https://picsum.photos/id/10/400/550', title: 'Path' },
-  { id: '6', imageUrl: 'https://picsum.photos/id/100/400/400', title: 'Office' },
-  { id: '7', imageUrl: 'https://picsum.photos/id/1002/400/650', title: 'Galaxy' },
-  { id: '8', imageUrl: 'https://picsum.photos/id/1011/400/350', title: 'Lake' },
-  { id: '9', imageUrl: 'https://picsum.photos/id/1012/400/500', title: 'Shore' },
-  { id: '10', imageUrl: 'https://picsum.photos/id/1013/400/550', title: 'Mist' },
-  { id: '11', imageUrl: 'https://picsum.photos/id/20/400/450', title: 'Camera' },
-  { id: '12', imageUrl: 'https://picsum.photos/id/30/400/600', title: 'Book' },
-];
+const initialPins: Pin[] = [];
 
 const SearchBar: React.FC = () => {
   return (
