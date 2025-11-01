@@ -4,6 +4,7 @@ import { Pin } from './types';
 import { supabase } from './lib/supabaseClient';
 import type { Session } from '@supabase/supabase-js';
 import Auth from './components/Auth';
+import CreatePinModal, { PinData as CreatePinDataType } from './components/CreatePinModal';
 
 const SearchBar: React.FC = () => {
   return (
@@ -30,8 +31,10 @@ const PinItem: React.FC<PinItemProps> = ({ pin }) => {
   return (
     <div className="mb-4 break-inside-avoid group relative">
       <img src={pin.imageUrl} alt={pin.title} className="w-full rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300" />
-       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-lg flex items-center justify-center">
-        <p className="text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-4 text-center">{pin.title}</p>
+       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all duration-300 rounded-lg flex flex-col items-center justify-center p-4">
+        <p className="text-white text-lg font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">{pin.title}</p>
+        {pin.description && <p className="text-white text-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-2 text-center">{pin.description}</p>}
+        {pin.hashtags && <p className="text-gray-300 text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300 mt-2 text-center">{pin.hashtags}</p>}
       </div>
     </div>
   );
@@ -65,6 +68,7 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isCreateModalOpen, setCreateModalOpen] = useState(false);
 
   useEffect(() => {
     const getSession = async () => {
@@ -88,7 +92,7 @@ const App: React.FC = () => {
         setLoading(true);
         const { data, error } = await supabase
           .from('pins')
-          .select('id, title, image_url, user_id')
+          .select('id, title, image_url, user_id, description, hashtags')
           .eq('user_id', session.user.id)
           .order('created_at', { ascending: false });
 
@@ -100,6 +104,8 @@ const App: React.FC = () => {
               title: pin.title || '',
               imageUrl: pin.image_url,
               user_id: pin.user_id,
+              description: pin.description,
+              hashtags: pin.hashtags,
           }));
           setPins(formattedPins);
         }
@@ -107,63 +113,65 @@ const App: React.FC = () => {
       }
     };
 
-    fetchPins();
+    if (session) {
+      fetchPins();
+    }
   }, [session]);
 
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCreatePin = async (pinData: CreatePinDataType) => {
     if (!session?.user) {
-        alert('Debes iniciar sesión para subir una imagen.');
+        alert('Debes iniciar sesión para crear un pin.');
         return;
     }
     
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `${session.user.id}/${fileName}`;
+    const file = pinData.image;
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}.${fileExt}`;
+    const filePath = `${session.user.id}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('pins-images')
-        .upload(filePath, file);
+    const { error: uploadError } = await supabase.storage
+      .from('pins-images')
+      .upload(filePath, file);
 
-      if (uploadError) {
-        console.error('Error uploading image:', uploadError);
-        alert('Error al subir la imagen.');
-        return;
-      }
+    if (uploadError) {
+      console.error('Error uploading image:', uploadError);
+      alert('Error al subir la imagen.');
+      return;
+    }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('pins-images')
-        .getPublicUrl(filePath);
+    const { data: { publicUrl } } = supabase.storage
+      .from('pins-images')
+      .getPublicUrl(filePath);
 
-      const newPinData = {
-        user_id: session.user.id,
-        title: file.name,
-        image_url: publicUrl,
-      };
+    const newPinData = {
+      user_id: session.user.id,
+      title: pinData.title,
+      description: pinData.description,
+      hashtags: pinData.hashtags,
+      image_url: publicUrl,
+    };
 
-      const { data: insertedPin, error: insertError } = await supabase
-        .from('pins')
-        .insert(newPinData)
-        .select()
-        .single();
-      
-      if (insertError) {
-          console.error('Error saving pin:', insertError);
-          alert('Error al guardar el pin.');
-          // Consider deleting the uploaded image if the DB insert fails
-      } else if (insertedPin) {
-           const formattedNewPin: Pin = {
-              id: insertedPin.id,
-              title: insertedPin.title || '',
-              imageUrl: insertedPin.image_url,
-              user_id: insertedPin.user_id,
-           };
-          setPins(prevPins => [formattedNewPin, ...prevPins]);
-      }
-      
-      event.target.value = '';
+    const { data: insertedPin, error: insertError } = await supabase
+      .from('pins')
+      .insert(newPinData)
+      .select()
+      .single();
+    
+    if (insertError) {
+        console.error('Error saving pin:', insertError);
+        alert('Error al guardar el pin.');
+        // Consider deleting the uploaded image if the DB insert fails
+    } else if (insertedPin) {
+         const formattedNewPin: Pin = {
+            id: insertedPin.id,
+            title: insertedPin.title || '',
+            imageUrl: insertedPin.image_url,
+            user_id: insertedPin.user_id,
+            description: insertedPin.description,
+            hashtags: insertedPin.hashtags,
+         };
+        setPins(prevPins => [formattedNewPin, ...prevPins]);
     }
   };
 
@@ -177,11 +185,18 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Sidebar onImageUpload={handleImageUpload} />
+      <Sidebar onShowCreateModal={() => setCreateModalOpen(true)} />
       <main className="ml-20 p-4 md:p-8">
         <SearchBar />
         {loading ? <div>Cargando pins...</div> : <PinGrid pins={pins} />}
       </main>
+       {isCreateModalOpen && (
+        <CreatePinModal
+            isOpen={isCreateModalOpen}
+            onClose={() => setCreateModalOpen(false)}
+            onSubmit={handleCreatePin}
+        />
+      )}
     </div>
   );
 };

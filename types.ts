@@ -3,4 +3,6 @@ export interface Pin {
   imageUrl: string;
   title: string;
   user_id: string;
+  description?: string;
+  hashtags?: string;
 }
