@@ -1,0 +1,5 @@
+{
+  "name": "Pinboard UI",
+  "description": "A Pinterest-style interface to upload and view photos in a masonry grid layout, featuring a modern vertical sidebar for navigation.",
+  "requestFramePermissions": []
+}
