@@ -51,8 +51,8 @@ const CreatePinPage: React.FC<CreatePinPageProps> = ({ session }) => {
         setIsSubmitting(true);
         
         const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const filePath = `${session.user.id}/${fileName}`;
+        const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+        const filePath = fileName;
 
         const { error: uploadError } = await supabase.storage
             .from('pins-images')
@@ -60,7 +60,7 @@ const CreatePinPage: React.FC<CreatePinPageProps> = ({ session }) => {
 
         if (uploadError) {
             console.error('Error uploading image:', uploadError);
-            alert('Error al subir la imagen.');
+            alert(`Error al subir la imagen: ${uploadError.message}`);
             setIsSubmitting(false);
             return;
         }
@@ -83,7 +83,7 @@ const CreatePinPage: React.FC<CreatePinPageProps> = ({ session }) => {
         
         if (insertError) {
             console.error('Error saving pin:', insertError);
-            alert('Error al guardar el pin.');
+            alert(`Error al guardar el pin: ${insertError.message}`);
         } else {
             alert('¡Pin creado con éxito!');
             window.location.assign('/');
