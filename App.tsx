@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Sidebar from './components/Sidebar';
 import PinGrid from './components/PinGrid';
 import PinDetail from './components/PinDetail';
-import { Pin } from './types';
+import { Pin, Comment } from './types';
 import { supabase } from './lib/supabaseClient';
-import type { Session } from '@supabase/supabase-js';
+import type { Session, User } from '@supabase/supabase-js';
 import Auth from './components/Auth';
 import CreatePinPage from './components/CreatePinPage';
 
@@ -25,11 +25,29 @@ const SearchBar: React.FC = () => {
   );
 };
 
+interface Author {
+    username: string;
+    avatar_url: string;
+}
+
+interface PinDetailData {
+    pin: Pin;
+    author: Author;
+    comments: Comment[];
+    likes: number;
+    isLiked: boolean;
+}
+
 const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
   const [path, setPath] = useState(window.location.pathname);
+  
+  // Cache for pin details
+  const [pinCache, setPinCache] = useState<Map<string, PinDetailData>>(new Map());
+  const [activePinData, setActivePinData] = useState<PinDetailData | null>(null);
+  const [detailLoading, setDetailLoading] = useState(true);
 
   useEffect(() => {
     const getSession = async () => {
@@ -76,6 +94,86 @@ const App: React.FC = () => {
     }
   }, [session]);
 
+  const getPinDetails = useCallback(async (pinId: string, user: User | null) => {
+      if (pinCache.has(pinId)) {
+          setActivePinData(pinCache.get(pinId)!);
+          setDetailLoading(false);
+          return;
+      }
+
+      setDetailLoading(true);
+
+      const { data: pinData, error: pinError } = await supabase.from('pins').select('*').eq('id', pinId).single();
+      if (pinError || !pinData) {
+          console.error('Error fetching pin:', pinError);
+          setDetailLoading(false);
+          return;
+      }
+      
+      const { count: likeCount } = await supabase.from('pin_likes').select('*', { count: 'exact', head: true }).eq('pin_id', pinId);
+      let isLiked = false;
+      if (user) {
+          const { data: likeData } = await supabase.from('pin_likes').select('id').eq('pin_id', pinId).eq('user_id', user.id).single();
+          isLiked = !!likeData;
+      }
+      
+      const { data: authorData } = await supabase.from('profiles').select('username, avatar_url').eq('id', pinData.user_id).single();
+      const { data: commentsData } = await supabase.from('comments').select(`id, text, profiles(username, avatar_url)`).eq('pin_id', pinId).order('created_at', { ascending: true });
+
+      const detailData: PinDetailData = {
+          pin: { id: pinData.id, title: pinData.title || '', imageUrl: pinData.image_url, user_id: pinData.user_id, description: pinData.description, hashtags: pinData.hashtags },
+          author: { username: authorData?.username || 'Usuario Anónimo', avatar_url: authorData?.avatar_url || `https://i.pravatar.cc/40?u=${pinData.user_id}` },
+          comments: commentsData?.map((c: any) => ({ id: c.id, text: c.text, user: { username: c.profiles?.username || 'Anónimo', avatar_url: c.profiles?.avatar_url || `https://i.pravatar.cc/32` } })) || [],
+          likes: likeCount ?? 0,
+          isLiked: isLiked,
+      };
+      
+      setPinCache(prevCache => new Map(prevCache).set(pinId, detailData));
+      setActivePinData(detailData);
+      setDetailLoading(false);
+  }, [pinCache]);
+
+
+  const handleLike = async (pinId: string) => {
+    if (!session?.user) return;
+    const currentPinData = pinCache.get(pinId);
+    if (!currentPinData) return;
+
+    let newLikedState = !currentPinData.isLiked;
+    let newLikesCount = newLikedState ? currentPinData.likes + 1 : currentPinData.likes - 1;
+
+    // Optimistic UI update
+    const updatedData = { ...currentPinData, isLiked: newLikedState, likes: newLikesCount };
+    setPinCache(prev => new Map(prev).set(pinId, updatedData));
+    setActivePinData(updatedData);
+
+    if (newLikedState) {
+        await supabase.from('pin_likes').insert({ pin_id: pinId, user_id: session.user.id });
+    } else {
+        await supabase.from('pin_likes').delete().match({ pin_id: pinId, user_id: session.user.id });
+    }
+  };
+
+  const handleCommentSubmit = async (pinId: string, text: string) => {
+      if (!text.trim() || !session?.user) return null;
+      
+      const { data, error } = await supabase.from('comments').insert({ text: text, pin_id: pinId, user_id: session.user.id }).select('id, text, profiles(username, avatar_url)').single();
+      if (error) {
+          return null;
+      }
+      
+      const newComment: Comment = {id: data.id, text: data.text, user: { username: data.profiles?.username || 'Anónimo', avatar_url: data.profiles?.avatar_url || `https://i.pravatar.cc/32` }};
+      
+      const currentPinData = pinCache.get(pinId);
+      if (currentPinData) {
+          const updatedData = { ...currentPinData, comments: [...currentPinData.comments, newComment] };
+          setPinCache(prev => new Map(prev).set(pinId, updatedData));
+          setActivePinData(updatedData);
+      }
+      return newComment;
+  };
+
+
   const renderContent = () => {
     if (loading) {
       return <div className="text-center">Cargando...</div>;
@@ -86,13 +184,14 @@ const App: React.FC = () => {
     }
 
     const pinIdMatch = path.match(/^\/pin\/(\d+)/);
+    
     if (path === '/crear') {
       return <CreatePinPage session={session} />;
     }
     
     if (pinIdMatch) {
       const pinId = pinIdMatch[1];
-      return <PinDetail pinId={pinId} allPins={pins} />;
+      return <PinDetail pinId={pinId} allPins={pins} getPinDetails={getPinDetails} activePinData={activePinData} detailLoading={detailLoading} currentUser={session.user} onLike={handleLike} onCommentSubmit={handleCommentSubmit} />;
     }
 
     // Default to home page

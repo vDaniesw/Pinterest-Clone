@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Pin, Comment } from '../types';
 import PinGrid from './PinGrid';
-import { supabase } from '../lib/supabaseClient';
 import type { User } from '@supabase/supabase-js';
 
 // Icons
@@ -54,136 +53,59 @@ interface Author {
     username: string;
     avatar_url: string;
 }
+interface PinDetailData {
+    pin: Pin;
+    author: Author;
+    comments: Comment[];
+    likes: number;
+    isLiked: boolean;
+}
+
 interface PinDetailProps {
     pinId: string;
     allPins: Pin[];
+    getPinDetails: (pinId: string, user: User | null) => void;
+    activePinData: PinDetailData | null;
+    detailLoading: boolean;
+    currentUser: User | null;
+    onLike: (pinId: string) => void;
+    onCommentSubmit: (pinId: string, text: string) => Promise<Comment | null>;
 }
 
-const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins }) => {
-    const [pin, setPin] = useState<Pin | null>(null);
-    const [likes, setLikes] = useState(0);
-    const [isLiked, setIsLiked] = useState(false);
-    const [author, setAuthor] = useState<Author | null>(null);
-    const [comments, setComments] = useState<Comment[]>([]);
+const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, activePinData, detailLoading, currentUser, onLike, onCommentSubmit }) => {
     const [newComment, setNewComment] = useState('');
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [comments, setComments] = useState<Comment[]>([]);
+
+    useEffect(() => {
+        getPinDetails(pinId, currentUser);
+    }, [pinId, currentUser, getPinDetails]);
+
+    useEffect(() => {
+        if (activePinData) {
+            setComments(activePinData.comments);
+        }
+    }, [activePinData]);
+
 
     const handleBack = () => {
         window.location.assign('/');
     }
 
-     useEffect(() => {
-        const fetchPinData = async () => {
-            setLoading(true);
-            const { data: pinData, error: pinError } = await supabase
-                .from('pins')
-                .select('*')
-                .eq('id', pinId)
-                .single();
-
-            if (pinError || !pinData) {
-                console.error('Error fetching pin:', pinError);
-                setLoading(false);
-                return;
-            }
-             const formattedPin: Pin = {
-              id: pinData.id,
-              title: pinData.title || '',
-              imageUrl: pinData.image_url,
-              user_id: pinData.user_id,
-              description: pinData.description,
-              hashtags: pinData.hashtags,
-            };
-            setPin(formattedPin);
-
-            const { data: { user } } = await supabase.auth.getUser();
-            setCurrentUser(user);
-
-            const { count: likeCount } = await supabase
-                .from('pin_likes')
-                .select('*', { count: 'exact', head: true })
-                .eq('pin_id', pinId);
-            setLikes(likeCount ?? 0);
-
-            if (user) {
-                const { data: likeData } = await supabase
-                    .from('pin_likes')
-                    .select('id')
-                    .eq('pin_id', pinId)
-                    .eq('user_id', user.id)
-                    .single();
-                setIsLiked(!!likeData);
-            }
-            
-            const { data: authorData } = await supabase
-                .from('profiles')
-                .select('username, avatar_url')
-                .eq('id', pinData.user_id)
-                .single();
-            
-            setAuthor({
-                username: authorData?.username || 'Usuario Anónimo',
-                avatar_url: authorData?.avatar_url || `https://i.pravatar.cc/40?u=${pinData.user_id}`,
-            });
-
-             const { data: commentsData } = await supabase
-                .from('comments')
-                .select(`id, text, profiles(username, avatar_url)`)
-                .eq('pin_id', pinId)
-                .order('created_at', { ascending: true });
-
-            if (commentsData) {
-                 const formattedComments = commentsData.map((c: any) => ({
-                    id: c.id,
-                    text: c.text,
-                    user: {
-                        username: c.profiles?.username || 'Anónimo',
-                        avatar_url: c.profiles?.avatar_url || `https://i.pravatar.cc/32`
-                    }
-                }));
-                setComments(formattedComments);
-            }
-            setLoading(false);
-        };
-
-        if (pinId) {
-            fetchPinData();
-        }
-    }, [pinId]);
-
-    const handleLike = async () => {
-        if (!currentUser) return alert('Debes iniciar sesión para dar me gusta.');
-
-        if (isLiked) {
-            const { error } = await supabase.from('pin_likes').delete().match({ pin_id: pinId, user_id: currentUser.id });
-            if (!error) { setIsLiked(false); setLikes(p => p - 1); }
-        } else {
-            const { error } = await supabase.from('pin_likes').insert({ pin_id: pinId, user_id: currentUser.id });
-            if (!error) { setIsLiked(true); setLikes(p => p + 1); }
-        }
-    };
-
-    const handleCommentSubmit = async (e: React.FormEvent) => {
+    const handleCommentSubmitForm = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newComment.trim() || !currentUser) return;
-        
-        const { data, error } = await supabase.from('comments').insert({ text: newComment, pin_id: pinId, user_id: currentUser.id }).select('id, text, profiles(username, avatar_url)').single();
-
-        if (error) {
-            alert('No se pudo publicar el comentario.');
-        } else if (data) {
-            const formattedComment = {id: data.id, text: data.text, user: { username: data.profiles?.username || 'Anónimo', avatar_url: data.profiles?.avatar_url || `https://i.pravatar.cc/32` }};
-            setComments(prev => [...prev, formattedComment]);
+        const submittedComment = await onCommentSubmit(pinId, newComment);
+        if (submittedComment) {
+            setComments(prev => [...prev, submittedComment]);
             setNewComment('');
         }
     };
 
     const relatedPins = allPins.filter(p => p.id !== parseInt(pinId));
     
-    if (loading) return <div className="text-center w-full py-20">Cargando pin...</div>;
-    if (!pin) return <div className="text-center w-full py-20">Pin no encontrado.</div>;
-
+    if (detailLoading) return <div className="text-center w-full py-20">Cargando pin...</div>;
+    if (!activePinData) return <div className="text-center w-full py-20">Pin no encontrado.</div>;
+    
+    const { pin, author, likes, isLiked } = activePinData;
 
     return (
         <div className="w-full">
@@ -201,7 +123,7 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins }) => {
                         <div className="p-4 sm:p-6 sticky top-4 bg-white rounded-t-3xl z-10">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2 text-gray-700">
-                                    <button onClick={handleLike} className="p-2 rounded-full hover:bg-gray-100 transition-colors flex items-center space-x-1">
+                                    <button onClick={() => onLike(pinId)} className="p-2 rounded-full hover:bg-gray-100 transition-colors flex items-center space-x-1">
                                         <HeartIcon filled={isLiked} /> <span className="font-bold text-lg">{likes}</span>
                                     </button>
                                     <button className="p-2 rounded-full hover:bg-gray-100"><CommentIcon /></button>
@@ -253,7 +175,7 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins }) => {
                                 </div>
 
                                 {currentUser && (
-                                    <form onSubmit={handleCommentSubmit} className="flex items-center mt-4">
+                                    <form onSubmit={handleCommentSubmitForm} className="flex items-center mt-4">
                                         <img src={currentUser.user_metadata.avatar_url || `https://i.pravatar.cc/32?u=${currentUser.id}`} alt="Tu avatar" className="w-10 h-10 rounded-full mr-3" />
                                         <div className="relative w-full">
                                           <input 
