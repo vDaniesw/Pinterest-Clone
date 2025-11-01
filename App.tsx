@@ -27,13 +27,34 @@ interface PinItemProps {
   pin: Pin;
 }
 
+const ShareIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+    </svg>
+);
+
+
 const PinItem: React.FC<PinItemProps> = ({ pin }) => {
   return (
-    <div className="mb-4 break-inside-avoid group relative">
-      <img src={pin.imageUrl} alt={pin.title} className="w-full rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300" />
-       <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 rounded-2xl flex flex-col items-start justify-end p-4">
-        <p className="text-white text-md font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300">{pin.title}</p>
-      </div>
+    <div className="mb-4 break-inside-avoid">
+        <div className="group relative cursor-pointer">
+            <img src={pin.imageUrl} alt={pin.title} className="w-full rounded-2xl shadow-md" />
+            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-2xl p-3 flex flex-col justify-between opacity-0 group-hover:opacity-100">
+                <div className="flex justify-end">
+                    <button className="bg-red-600 text-white font-bold px-4 py-2 rounded-full hover:bg-red-700 transition-colors text-base">
+                        Guardar
+                    </button>
+                </div>
+                <div className="flex justify-end">
+                    <button 
+                      aria-label="Compartir Pin"
+                      className="bg-white w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors shadow-md">
+                        <ShareIcon />
+                    </button>
+                </div>
+            </div>
+        </div>
+      <p className="text-sm font-semibold mt-2 px-1 truncate">{pin.title}</p>
     </div>
   );
 };
