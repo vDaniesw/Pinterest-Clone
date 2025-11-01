@@ -29,9 +29,7 @@ const App: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
   const [pins, setPins] = useState<Pin[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPin, setSelectedPin] = useState<Pin | null>(null);
-  const path = window.location.pathname;
-
+  const [path, setPath] = useState(window.location.pathname);
 
   useEffect(() => {
     const getSession = async () => {
@@ -51,76 +49,69 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const fetchPins = async () => {
-      if (session?.user) {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('pins')
-          .select('id, title, image_url, user_id, description, hashtags')
-          // .eq('user_id', session.user.id) // Temporarily disabled to see all pins for detail view
-          .order('created_at', { ascending: false });
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('pins')
+        .select('id, title, image_url, user_id, description, hashtags')
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Error fetching pins:', error);
-        } else if (data) {
-          const formattedPins: Pin[] = data.map(pin => ({
-              id: pin.id,
-              title: pin.title || '',
-              imageUrl: pin.image_url,
-              user_id: pin.user_id,
-              description: pin.description,
-              hashtags: pin.hashtags,
-          }));
-          setPins(formattedPins);
-        }
-        setLoading(false);
+      if (error) {
+        console.error('Error fetching pins:', error);
+      } else if (data) {
+        const formattedPins: Pin[] = data.map(pin => ({
+            id: pin.id,
+            title: pin.title || '',
+            imageUrl: pin.image_url,
+            user_id: pin.user_id,
+            description: pin.description,
+            hashtags: pin.hashtags,
+        }));
+        setPins(formattedPins);
       }
+      setLoading(false);
     };
 
-    if (session && path === '/') {
+    if (session) {
       fetchPins();
-    } else if (path !== '/') {
-        setLoading(false);
     }
-  }, [session, path]);
+  }, [session]);
 
-  const handleSelectPin = (pin: Pin) => {
-    setSelectedPin(pin);
+  const renderContent = () => {
+    if (loading) {
+      return <div className="text-center">Cargando...</div>;
+    }
+    
+    if (!session) {
+      return <Auth />;
+    }
+
+    const pinIdMatch = path.match(/^\/pin\/(\d+)/);
+    if (path === '/crear') {
+      return <CreatePinPage session={session} />;
+    }
+    
+    if (pinIdMatch) {
+      const pinId = pinIdMatch[1];
+      return <PinDetail pinId={pinId} allPins={pins} />;
+    }
+
+    // Default to home page
+    return (
+      <>
+        <SearchBar />
+        <PinGrid pins={pins} />
+      </>
+    );
   };
-
-  const handleClosePin = () => {
-    setSelectedPin(null);
-  };
-
-
-  if (loading && !session && path !== '/crear') {
-      return <div className="flex items-center justify-center h-screen">Cargando...</div>
-  }
-
-  if (!session) {
-    return <Auth />;
-  }
   
+  const isDetailPage = /^\/pin\/\d+/.test(path);
   const isCreatePage = path === '/crear';
 
   return (
-    <div className={`min-h-screen ${isCreatePage || selectedPin ? 'bg-gray-100' : 'bg-white'}`}>
+    <div className={`min-h-screen ${isCreatePage || isDetailPage ? 'bg-gray-100' : 'bg-white'}`}>
       <Sidebar />
       <main className={`ml-20 ${isCreatePage ? '' : 'p-4 md:p-8'}`}>
-        {isCreatePage ? (
-          <CreatePinPage session={session} />
-        ) : selectedPin ? (
-          <PinDetail 
-            pin={selectedPin} 
-            relatedPins={pins.filter(p => p.id !== selectedPin.id)}
-            onClose={handleClosePin} 
-            onPinClick={handleSelectPin}
-          />
-        ) : (
-          <>
-            <SearchBar />
-            {loading ? <div className="text-center">Cargando pins...</div> : <PinGrid pins={pins} onPinClick={handleSelectPin} />}
-          </>
-        )}
+        {renderContent()}
       </main>
     </div>
   );

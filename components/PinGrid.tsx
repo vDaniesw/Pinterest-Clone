@@ -9,12 +9,15 @@ const ShareIcon = () => (
 
 interface PinItemProps {
   pin: Pin;
-  onPinClick: (pin: Pin) => void;
 }
 
-const PinItem: React.FC<PinItemProps> = ({ pin, onPinClick }) => {
+const PinItem: React.FC<PinItemProps> = ({ pin }) => {
+  const handleNavigate = () => {
+    window.location.assign(`/pin/${pin.id}`);
+  };
+
   return (
-    <div className="mb-4 break-inside-avoid cursor-pointer" onClick={() => onPinClick(pin)}>
+    <div className="mb-4 break-inside-avoid cursor-pointer" onClick={handleNavigate}>
         <div className="group relative">
             <img src={pin.imageUrl} alt={pin.title} className="w-full rounded-2xl shadow-md" />
             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-2xl p-3 flex flex-col justify-between opacity-0 group-hover:opacity-100">
@@ -40,10 +43,9 @@ const PinItem: React.FC<PinItemProps> = ({ pin, onPinClick }) => {
 
 interface PinGridProps {
   pins: Pin[];
-  onPinClick: (pin: Pin) => void;
 }
 
-const PinGrid: React.FC<PinGridProps> = ({ pins, onPinClick }) => {
+const PinGrid: React.FC<PinGridProps> = ({ pins }) => {
   if (pins.length === 0) {
     return (
         <div className="text-center py-20">
@@ -56,7 +58,7 @@ const PinGrid: React.FC<PinGridProps> = ({ pins, onPinClick }) => {
   return (
     <div className="w-full mx-auto" style={{ columnGap: '1rem', columns: '200px' }}>
       {pins.map((pin) => (
-        <PinItem key={pin.id} pin={pin} onPinClick={onPinClick} />
+        <PinItem key={pin.id} pin={pin} />
       ))}
     </div>
   );
