@@ -114,7 +114,7 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
             <div className="my-8 mx-auto max-w-[90rem] flex space-x-8">
                 {/* Left Column: Pin Details */}
                 <div className="w-full md:w-1/2 flex justify-end">
-                    <div className="bg-white shadow-xl rounded-3xl max-w-xl w-full border border-gray-200">
+                    <div className="bg-white rounded-3xl max-w-xl w-full border border-gray-200">
                         <div className="p-4 sm:p-6 sticky top-4 bg-white rounded-t-3xl z-10">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2 text-gray-700">
@@ -178,11 +178,11 @@ const PinDetail: React.FC<PinDetailProps> = ({ pinId, allPins, getPinDetails, ac
                                                 placeholder="Agregar un comentario" 
                                                 value={newComment}
                                                 onChange={(e) => setNewComment(e.target.value)}
-                                                className="w-full bg-gray-100 rounded-2xl border-transparent focus:ring-2 focus:ring-gray-400 focus:border-transparent py-2.5 px-4 pr-20"
+                                                className="w-full bg-gray-100 rounded-full border-transparent focus:ring-2 focus:ring-gray-400 focus:border-transparent py-2.5 px-4 pr-24 transition"
                                             />
-                                            <div className="absolute inset-y-0 right-0 pr-4 flex items-center space-x-2">
-                                                <button type="button" className="text-xl p-1 hover:bg-gray-200 rounded-full"><EmojiPickerIcon /></button>
-                                                <button type="button" className="p-1 hover:bg-gray-200 rounded-full"><GifIcon /></button>
+                                            <div className="absolute inset-y-0 right-0 pr-3 flex items-center space-x-1">
+                                                <button type="button" className="text-xl p-2 hover:bg-gray-200 rounded-full"><EmojiPickerIcon /></button>
+                                                <button type="button" className="p-2 hover:bg-gray-200 rounded-full"><GifIcon /></button>
                                             </div>
                                         </div>
                                     </form>
